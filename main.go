@@ -1,6 +1,11 @@
 package main
 
 import (
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -64,5 +69,15 @@ func main() {
 		c.JSON(200, gin.H{"message": "running"})
 	})
 	router.POST("/service", ServiceHandler)
-	router.Run("localhost:8080")
+	// router.Run("localhost:8080")
+	go func() {
+		router.Run("localhost:8080")
+
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("shutting down server")
+
 }
