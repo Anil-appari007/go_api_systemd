@@ -4,15 +4,20 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/coreos/go-systemd/v22/dbus"
 )
 
 func main() {
 	fmt.Println("Go...")
+	serviceName := os.Args[1]
+	action := os.Args[2]
+	log.Printf("service=%s", serviceName)
+	log.Printf("action=%s", action)
+
 	ctx := context.TODO()
-	service := "memcached.service"
-	fmt.Println(service)
+	service := serviceName + ".service"
 
 	dCon, err := dbus.NewSystemdConnectionContext(ctx)
 	if err != nil {
@@ -54,21 +59,21 @@ func main() {
 
 	//
 
-	ok, err := IsServiceExist(dCon, service, ctx)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	if ok {
-		log.Printf("service %s exists", service)
-	}
+	// ok, err := IsServiceExist(dCon, service, ctx)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// if ok {
+	// 	log.Printf("service %s exists", service)
+	// }
 
-	ok, err = IsServiceActive(dCon, service, ctx)
-	if err != nil {
-		log.Fatalf("error while getting status - %s", err)
-	}
-	if ok {
-		log.Printf("service %s is active", service)
-	}
+	// ok, err = IsServiceActive(dCon, service, ctx)
+	// if err != nil {
+	// 	log.Fatalf("error while getting status - %s", err)
+	// }
+	// if ok {
+	// 	log.Printf("service %s is active", service)
+	// }
 
 	// if data == LES {
 
@@ -92,5 +97,44 @@ func main() {
 	// 	}
 	// 	fmt.Printf("Start stauts = %d\n", startStatus)
 	// }
+
+	ok, err := IsServiceExist(dCon, service, ctx)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if ok {
+		log.Printf("%s exists", service)
+	} else {
+		log.Fatalf("%s does not exist", service)
+	}
+
+	switch action {
+	case "status":
+		ok, err = IsServiceActive(dCon, service, ctx)
+		if err != nil {
+			log.Fatalf("error while getting status - %s", err)
+		}
+		if ok {
+			log.Printf("service %s is active", service)
+		} else {
+			log.Printf("service %s is not active", service)
+		}
+	case "start":
+		ok, err = StartService(dCon, service, ctx)
+		if err != nil {
+			log.Fatalf("error while getting status - %s", err)
+		}
+		if ok {
+			log.Printf("%s is started")
+		}
+	case "stop":
+		ok, err = StopService(dCon, service, ctx)
+		if err != nil {
+			log.Fatalf("error while getting status - %s", err)
+		}
+		if ok {
+			log.Printf("%s is stopped")
+		}
+	}
 
 }
