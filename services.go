@@ -150,3 +150,94 @@ func ServiceHandler(c *gin.Context) {
 		}
 	}
 }
+
+func RunServiceAction(serviceName, action string) (int, string, error) {
+	ctx := context.TODO()
+	service := serviceName + ".service"
+	dCon, err := dbus.NewSystemdConnectionContext(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, "", err
+	}
+	defer dCon.Close()
+
+	ok, err := IsServiceExist(dCon, service, ctx)
+	if err != nil {
+		// log.Println(err)
+		return http.StatusInternalServerError, "", err
+	}
+	if !ok {
+		// log.Fatalf("%s does not exist", service)
+		return http.StatusNotFound, "", fmt.Errorf("%s does not exist", service)
+	}
+
+	switch action {
+	case "status":
+		ok, err = IsServiceActive(dCon, service, ctx)
+		if err != nil {
+			// log.Fatalf("error while getting status - %s", err)
+			return http.StatusInternalServerError, "", err
+		}
+		if ok {
+			// log.Printf("service %s is active", service)
+			return http.StatusAccepted, fmt.Sprintf("service %s is active", service), nil
+
+		} else {
+			// log.Printf("service %s is not active", service)
+			return http.StatusAccepted, fmt.Sprintf("service %s is not active", service), nil
+
+		}
+	case "start":
+		ok, err = StartService(dCon, service, ctx)
+		if err != nil {
+			// log.Printf("error while getting status - %s", err)
+			return http.StatusInternalServerError, "", err
+		}
+
+		if ok {
+			// log.Printf("%s is started", service)
+			return http.StatusAccepted, fmt.Sprintf("%s is started", service), nil
+
+		}
+	case "stop":
+		ok, err = StopService(dCon, service, ctx)
+		if err != nil {
+			// log.Printf("error while getting status - %s", err)
+			return http.StatusInternalServerError, "", err
+		}
+		if ok {
+			return http.StatusAccepted, fmt.Sprintf("%s is stopped", service), nil
+		}
+	}
+	return http.StatusBadRequest, "", fmt.Errorf("invalid action : %s", action)
+}
+
+func multiServiceHandler(c *gin.Context) {
+	type details struct {
+		ServiceName string `json:"serviceName"`
+		Action      string `json:"action"`
+		Code        int    `json:"code"`
+		Msg         string `json:"msg"`
+		Err         string `json:"err"`
+	}
+	var multiSd []details
+	if err := c.BindJSON(&multiSd); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	for each := range multiSd {
+		// service := multiSd[each]
+		// service.Code, service.Msg, service.Err = RunServiceAction(service.ServiceName, service.Action)
+		var err error
+		multiSd[each].Code, multiSd[each].Msg, err = RunServiceAction(multiSd[each].ServiceName, multiSd[each].Action)
+
+		if err != nil {
+			multiSd[each].Err = err.Error()
+		}
+
+		log.Println(multiSd[each])
+	}
+	// multiSd[0].Err = fmt.Errorf("test")
+	log.Println(multiSd)
+	c.JSON(200, gin.H{"msg": multiSd})
+}

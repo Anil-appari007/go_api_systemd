@@ -69,6 +69,7 @@ func main() {
 		c.JSON(200, gin.H{"message": "running"})
 	})
 	router.POST("/service", ServiceHandler)
+	router.POST("/multiservice", multiServiceHandler)
 	// router.Run("localhost:8080")
 	go func() {
 		router.Run("localhost:8080")

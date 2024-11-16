@@ -1,0 +1,1 @@
+[{"serviceName":"memcached","action":"stop"},{"serviceName":"memcachedd","action":"status"}]

@@ -29,3 +29,20 @@ curl http://localhost:8080/service \
     --header "Content-Type: application/json" \
     --request "POST" \
     --data '{"serviceName":"memcached","action":"stop"}'
+
+
+to do:
+- api endpoint for action on single service
+- api endpoint for action on multiple services
+
+
+
+
+
+
+////////
+curl http://localhost:8080/multiservice \
+    --include \
+    --header "Content-Type: application/json" \
+    --request "POST" \
+    --data '[{"serviceName":"memcached","action":"stop"},{"serviceName":"memcachedd","action":"status"}]'
